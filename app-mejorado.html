@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Vibracional Avanzado</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0e27;
+            color: #e0e0e0;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            gap: 15px;
+            padding: 15px;
+        }
+
+        .sidebar {
+            width: 220px;
+            background: #1a1f3a;
+            border-radius: 10px;
+            padding: 20px;
+            overflow-y: auto;
+            border: 1px solid #2a3f5f;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .sidebar-section h3 {
+            color: #00d4ff;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            opacity: 0.8;
+            border-bottom: 1px solid #2a3f5f;
+            padding-bottom: 8px;
+        }
+
+        .fault-btn {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 8px;
+            border: 2px solid transparent;
+            background: #252d47;
+            color: #b0b8d4;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.95em;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .fault-btn:hover {
+            background: #2a3555;
+            border-color: #00d4ff;
+            color: #e0e0e0;
+        }
+
+        .fault-btn.active {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: #0a0e27;
+            border-color: #00d4ff;
+            font-weight: bold;
+        }
+
+        .color-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .color-sano {
+            background: #2ecc71;
+        }
+
+        .color-desbalance {
+            background: #f39c12;
+        }
+
+        .color-desalineamiento {
+            background: #e67e22;
+        }
+
+        .color-rodamiento {
+            background: #e74c3c;
+        }
+
+        .color-cavitacion {
+            background: #c0392b;
+        }
+
+        .color-combinada {
+            background: #9b59b6;
+        }
+
+        .quiz-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin-top: auto;
+        }
+
+        .quiz-btn:hover {
+            background: linear-gradient(135deg, #8e44ad, #7d3c98);
+            transform: translateY(-2px);
+        }
+
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1f3a, #2a3f5f);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #3a4f7f;
+        }
+
+        .header h1 {
+            color: #00d4ff;
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: #9db4d0;
+            font-size: 0.9em;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 15px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .panel {
+            background: #1a1f3a;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #2a3f5f;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel h2 {
+            color: #00d4ff;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #2a3f5f;
+            padding-bottom: 10px;
+        }
+
+        .chart-container {
+            flex: 1;
+            min-height: 0;
+            position: relative;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-group label {
+            color: #7a90b4;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="number"],
+        input[type="range"],
+        select {
+            background: #252d47;
+            border: 1px solid #3a4f7f;
+            color: #e0e0e0;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+
+        input[type="number"]:focus,
+        input[type="range"]:focus,
+        select:focus {
+            border-color: #00d4ff;
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+        }
+
+        .slider-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 5px;
+        }
+
+        .slider-value {
+            color: #00d4ff;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+
+        .generate-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: #0a0e27;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1em;
+            margin-top: 10px;
+        }
+
+        .generate-btn:hover {
+            background: linear-gradient(135deg, #0099cc, #0077aa);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .metric {
+            background: #252d47;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #00d4ff;
+            text-align: center;
+        }
+
+        .metric-label {
+            color: #7a90b4;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            color: #00d4ff;
+            font-size: 1.8em;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+
+        .diagnosis {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .diagnosis-header {
+            background: #252d47;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #e74c3c;
+        }
+
+        .fault-name {
+            color: #e0e0e0;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .severity-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .severity-NORMAL {
+            background: #2ecc71;
+            color: #1a1a1a;
+        }
+
+        .severity-LEVE {
+            background: #f39c12;
+            color: #1a1a1a;
+        }
+
+        .severity-MODERADA {
+            background: #e67e22;
+            color: white;
+        }
+
+        .severity-SEVERA {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .severity-CRÍTICA {
+            background: #c0392b;
+            color: white;
+        }
+
+        .confidence-container {
+            margin-top: 10px;
+        }
+
+        .confidence-label {
+            color: #7a90b4;
+            font-size: 0.8em;
+            margin-bottom: 5px;
+        }
+
+        .confidence-bar {
+            height: 8px;
+            background: #1a2035;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #2a3f5f;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #0099cc);
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 10px;
+        }
+
+        .confidence-text {
+            color: #7a90b4;
+            font-size: 0.75em;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        .scores-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .score-item {
+            background: #1a2035;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #2a3f5f;
+            text-align: center;
+        }
+
+        .score-name {
+            color: #7a90b4;
+            font-size: 0.7em;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .score-value {
+            color: #00d4ff;
+            font-weight: bold;
+            font-size: 1.1em;
+            font-family: 'Courier New', monospace;
+        }
+
+        .recommendations {
+            background: #252d47;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .recommendations h4 {
+            color: #00d4ff;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .recommendations ul {
+            list-style: none;
+        }
+
+        .recommendations li {
+            color: #b0b8d4;
+            font-size: 0.8em;
+            margin-bottom: 5px;
+            padding-left: 15px;
+            position: relative;
+            line-height: 1.3;
+        }
+
+        .recommendations li:before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: #00d4ff;
+            font-weight: bold;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0a0e27;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #2a3f5f;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3a4f7f;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 14, 39, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(0, 212, 255, 0.2);
+            border-top: 3px solid #00d4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .findings {
+            background: #252d47;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .findings h4 {
+            color: #00d4ff;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .findings-list {
+            list-style: none;
+        }
+
+        .findings-list li {
+            color: #7a90b4;
+            font-size: 0.75em;
+            margin-bottom: 4px;
+            padding-left: 12px;
+            position: relative;
+            line-height: 1.2;
+        }
+
+        .findings-list li:before {
+            content: '▪';
+            position: absolute;
+            left: 0;
+            color: #00d4ff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <h3>📊 Modo de Análisis</h3>
+                <button class="fault-btn active" onclick="selectFault('sano')"><span
+                        class="color-indicator color-sano"></span>Sano</button>
+                <button class="fault-btn" onclick="selectFault('desbalance')"><span
+                        class="color-indicator color-desbalance"></span>Desbalance</button>
+                <button class="fault-btn" onclick="selectFault('desalineamiento')"><span
+                        class="color-indicator color-desalineamiento"></span>Desalineamiento</button>
+                <button class="fault-btn" onclick="selectFault('rodamiento')"><span
+                        class="color-indicator color-rodamiento"></span>Falla Rodamiento</button>
+                <button class="fault-btn" onclick="selectFault('cavitacion')"><span
+                        class="color-indicator color-cavitacion"></span>Cavitación</button>
+                <button class="fault-btn" onclick="selectFault('combinada')"><span
+                        class="color-indicator color-combinada"></span>Combinada</button>
+            </div>
+            <div class="sidebar-section">
+                <h3>🎮 Modo Quiz</h3>
+                <button class="quiz-btn">🧠 Adivina la Falla</button>
+            </div>
+        </div>
+
+        <div class="main">
+            <div class="header">
+                <h1>🔬 Simulador Vibracional Avanzado</h1>
+                <p>Análisis profesional de vibraciones con diagnóstico automático inteligente</p>
+            </div>
+
+            <div class="content">
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <div class="panel">
+                        <h2>📈 Señal Temporal</h2>
+                        <div id="waveformChart" class="chart-container"></div>
+                    </div>
+                    <div class="panel">
+                        <h2>📊 Espectro de Frecuencia</h2>
+                        <div id="spectrumChart" class="chart-container"></div>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 15px; overflow-y: auto;">
+                    <div class="panel">
+                        <h2>⚙️ Configuración</h2>
+                        <div class="controls">
+                            <div class="control-group">
+                                <label>Severidad</label>
+                                <input type="range" id="severity" min="0" max="1" step="0.1" value="0.6"
+                                    onchange="updateSeverityLabel()">
+                                <div class="slider-info">
+                                    <span style="font-size: 0.75em; color: #7a90b4;">0%</span>
+                                    <span class="slider-value" id="severityLabel">MODERADA</span>
+                                    <span style="font-size: 0.75em; color: #7a90b4;">100%</span>
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label>RPM</label>
+                                <input type="number" id="rpm" value="1500" min="100" max="10000">
+                            </div>
+                            <div class="control-group">
+                                <label>Duración (s)</label>
+                                <input type="number" id="duration" value="1.0" min="0.1" max="10" step="0.1">
+                            </div>
+                            <div class="control-group">
+                                <label>Frecuencia Muestreo</label>
+                                <input type="number" id="samplingRate" value="10000" min="1000" max="100000"
+                                    step="1000">
+                            </div>
+                        </div>
+                        <button class="generate-btn" onclick="generateSignal()">▶ Generar Análisis</button>
+                    </div>
+
+                    <div class="panel" style="flex: 0;">
+                        <h2>📊 Métricas</h2>
+                        <div class="metrics">
+                            <div class="metric">
+                                <div class="metric-label">RMS</div>
+                                <div class="metric-value" id="metricRMS">-</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-label">Pico</div>
+                                <div class="metric-value" id="metricPeak">-</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-label">Kurtosis</div>
+                                <div class="metric-value" id="metricKurtosis">-</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-label">Cresta</div>
+                                <div class="metric-value" id="metricCrest">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <h2>🔍 Diagnóstico</h2>
+                        <div class="diagnosis" id="diagnosisPanel" style="display: none;">
+                            <div class="diagnosis-header">
+                                <div class="fault-name" id="faultName">-</div>
+                                <span class="severity-badge" id="severityBadge">-</span>
+                                <div class="confidence-container">
+                                    <div class="confidence-label">Confianza</div>
+                                    <div class="confidence-bar">
+                                        <div class="confidence-fill" id="confidenceBar"></div>
+                                    </div>
+                                    <div class="confidence-text" id="confidenceText">0%</div>
+                                </div>
+                            </div>
+                            <div class="scores-grid" id="scoresGrid"></div>
+                            <div class="recommendations" id="recommendationsBox">
+                                <h4>📋 Recomendaciones</h4>
+                                <ul id="recommendationsList"></ul>
+                            </div>
+                            <div class="findings">
+                                <h4>📌 Hallazgos</h4>
+                                <ul class="findings-list" id="findingsList"></ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/signal_generator.js"></script>
+    <script src="js/fault_simulator.js"></script>
+    <script src="js/diagnostics.js"></script>
+
+    <script>
+        let global_time, global_signal, global_config;
+        let currentFault = 'sano';
+
+        function selectFault(fault) {
+            currentFault = fault;
+            document.querySelectorAll('.fault-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.closest('.fault-btn').classList.add('active');
+            generateSignal();
+        }
+
+        function updateSeverityLabel() {
+            const val = parseFloat(document.getElementById('severity').value);
+            const labels = ['NADA', 'LEVE', 'LEVE', 'MODERADA', 'MODERADA', 'SEVERA', 'SEVERA', 'CRÍTICA', 'CRÍTICA', 'CRÍTICA', 'CRÍTICA'];
+            document.getElementById('severityLabel').textContent = labels[Math.floor(val * 10)];
+        }
+
+        function generateSignal() {
+            const severity = parseFloat(document.getElementById('severity').value);
+            const rpm = parseFloat(document.getElementById('rpm').value);
+            const duration = parseFloat(document.getElementById('duration').value);
+            const samplingRate = parseFloat(document.getElementById('samplingRate').value);
+
+            document.getElementById('loadingOverlay').style.display = 'flex';
+
+            setTimeout(() => {
+                global_config = new SignalConfig(samplingRate, duration, rpm, 1.0);
+                const simulator = new FaultSimulator(global_config);
+                const result = simulator.generateFault(currentFault, severity);
+
+                global_time = result.time;
+                global_signal = result.signal;
+
+                const features = SignalAnalyzer.getAllFeatures(global_signal, samplingRate, rpm);
+                updateMetrics(features);
+                updateCharts();
+
+                const engine = new DiagnosticEngine(samplingRate, rpm);
+                const diagnosis = engine.diagnose(global_signal);
+                updateDiagnosis(diagnosis);
+
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }, 100);
+        }
+
+        function updateMetrics(features) {
+            const tf = features.time_domain;
+            document.getElementById('metricRMS').textContent = tf.rms.toFixed(3);
+            document.getElementById('metricPeak').textContent = tf.peak.toFixed(3);
+            document.getElementById('metricKurtosis').textContent = tf.kurtosis.toFixed(2);
+            document.getElementById('metricCrest').textContent = tf.crest_factor.toFixed(2);
+        }
+
+        function updateCharts() {
+            const waveConfig = {
+                x: global_time.slice(0, Math.min(2000, global_time.length)),
+                y: global_signal.slice(0, Math.min(2000, global_signal.length)),
+                type: 'scatter',
+                mode: 'lines',
+                line: { color: '#00d4ff', width: 1 },
+                name: 'Amplitud (g)'
+            };
+
+            const layout1 = {
+                title: 'Amplitud (g) vs Tiempo (ms) - primeros 100 ms',
+                xaxis: { title: 'ms' },
+                yaxis: { title: 'Amplitud (g)' },
+                hovermode: 'x unified',
+                plot_bgcolor: '#0a0e27',
+                paper_bgcolor: '#1a1f3a',
+                font: { color: '#b0b8d4' },
+                margin: { l: 50, r: 50, t: 50, b: 50 }
+            };
+
+            Plotly.newPlot('waveformChart', [waveConfig], layout1, { responsive: true, displayModeBar: false });
+
+            const features = SignalAnalyzer.getAllFeatures(global_signal, global_config.sampling_rate, global_config.rpm);
+            const freqs = features.frequencies.slice(0, features.magnitudes.length / 4);
+            const mags = features.magnitudes.slice(0, features.magnitudes.length / 4).map(x => x / Math.max(...features.magnitudes.slice(0, features.magnitudes.length / 4)));
+
+            const specConfig = {
+                x: freqs,
+                y: mags,
+                type: 'scatter',
+                mode: 'lines',
+                line: { color: '#00d4ff', width: 1 },
+                fill: 'tozeroy',
+                fillcolor: 'rgba(0, 212, 255, 0.1)',
+                name: 'Magnitud'
+            };
+
+            const layout2 = {
+                title: 'Espectro FFT - Análisis de Frecuencias',
+                xaxis: { title: 'Frecuencia (Hz)' },
+                yaxis: { title: 'Magnitud Normalizada' },
+                hovermode: 'x unified',
+                plot_bgcolor: '#0a0e27',
+                paper_bgcolor: '#1a1f3a',
+                font: { color: '#b0b8d4' },
+                margin: { l: 50, r: 50, t: 50, b: 50 }
+            };
+
+            Plotly.newPlot('spectrumChart', [specConfig], layout2, { responsive: true, displayModeBar: false });
+        }
+
+        function updateDiagnosis(diagnosis) {
+            document.getElementById('diagnosisPanel').style.display = 'block';
+
+            const descMap = {
+                'sano': '✓ Sano',
+                'rodamiento': '⚡ Falla de Rodamiento',
+                'cavitacion': '💧 Cavitación',
+                'desalineamiento': '🔄 Desalineamiento',
+                'desbalance': '⚖️ Desbalance',
+                'combinada': '🔀 Falla Combinada'
+            };
+
+            document.getElementById('faultName').textContent = descMap[diagnosis.primary_fault] || diagnosis.primary_fault;
+
+            const severityBadge = document.getElementById('severityBadge');
+            severityBadge.textContent = diagnosis.severity_level;
+            severityBadge.className = `severity-badge severity-${diagnosis.severity_level}`;
+
+            const confidence = (diagnosis.confidence * 100);
+            document.getElementById('confidenceBar').style.width = confidence + '%';
+            document.getElementById('confidenceText').textContent = confidence.toFixed(1) + '%';
+
+            const scoresHTML = Object.entries(diagnosis.all_scores)
+                .map(([fault, score]) => {
+                    const labels = { 'sano': '✓ Sano', 'rodamiento': '⚡ Roda.', 'cavitacion': '💧 Cav.', 'desalineamiento': '🔄 Desalin.', 'desbalance': '⚖️ Desbal.', 'combinada': '🔀 Comb.' };
+                    return `<div class="score-item"><div class="score-name">${labels[fault] || fault}</div><div class="score-value">${(score * 100).toFixed(0)}%</div></div>`;
+                })
+                .join('');
+            document.getElementById('scoresGrid').innerHTML = scoresHTML;
+
+            document.getElementById('recommendationsList').innerHTML = diagnosis.recommendations.map(r => `<li>${r}</li>`).join('');
+            document.getElementById('findingsList').innerHTML = diagnosis.analysis.detailed_findings.map(f => `<li>${f}</li>`).join('');
+        }
+
+        window.addEventListener('load', generateSignal);
+    </script>
+</body>
+
+</html>
